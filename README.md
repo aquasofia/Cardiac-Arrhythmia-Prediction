@@ -27,9 +27,18 @@ Model utilizes the PyTorch Librariries:
 - Dataloader  to load data from a custom Dataset object
 
 ```python
-# Dataloader returns features and class for a given index
-x, y = Dataloader()
+# retrieve data
+dataset =ECGDataset(data_dir='dir/training')
 
+# Obtain a data loader for training set
+data = get_data_loader(
+        dataset=dataset,
+        batch_size=batch_size,
+        shuffle=True)
+
+# Dataloader returns features and class for a given index
+x, y = data[index]
+  
 ```
 
 ## Contribution
