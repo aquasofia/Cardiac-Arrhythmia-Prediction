@@ -42,19 +42,19 @@ def main():
                       'dropout': 0.1}
 
     # Obtain a data loader for training set
-    loader_training = getting_and_init_the_data_sofia_yllikainen.get_data_loader(
+    loader_training = get_data_loader(
         dataset=dataset_training,
         batch_size=training_parameters['batch_size'],
         shuffle=True)
 
     # Obtain a data loader for validation set
-    loader_validation = getting_and_init_the_data_sofia_yllikainen.get_data_loader(
+    loader_validation = get_data_loader(
         dataset=dataset_validation,
         batch_size=training_parameters['batch_size'],
         shuffle=True)
 
     # Obtain a data loader for testing set
-    loader_testing = getting_and_init_the_data_sofia_yllikainen.get_data_loader(
+    loader_testing = get_data_loader(
         dataset=dataset_testing,
         batch_size=training_parameters['batch_size'],
         shuffle=True)
