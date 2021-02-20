@@ -9,9 +9,10 @@ from cnn import CNNSystem
 
 def main():
     # Load training, validation and testing data from directory
-    #dataset_training = ECGDataset(data_dir='dir/training')
-    #dataset_testing = ECGDataset(data_dir='dir/testing')
-    #dataset_validation = ECGDataset(data_dir='dir/validation')
+    dataset_training = ECGDataset(data_dir='./training')
+    dataset_testing = ECGDataset(data_dir='./testing')
+    dataset_training_chunks = ECGDataset(data_dir='./training/chunks')
+    #dataset_validation = ECGDataset(0, 0, data_dir='validation')
 
     # Define training parameters
     training_parameters = {'batch_size': 4,
