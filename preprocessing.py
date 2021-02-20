@@ -10,48 +10,119 @@ file_numbers = ['100', '101', '102', '103', '104', '105', '106',
 '214', '215', '217', '219', '220', '221', '222', '223', '228', 
 '230', '231', '232', '233', '234']
 
+individual_file = ['100']
+
 filepath = './mit-bih-arrhythmia-database-1.0.0/'
 
-annotations = []
-records = []
-
-for num in file_numbers:
-    file = filepath + num
-    record = wfdb.rdrecord(file, smooth_frames=True)
-    annotation = wfdb.rdann(file, 'atr')
-
-    records.append(record)
-    annotations.append(annotation)
 
 Fs = 360 # MIT-BIH sampling frequency
-splitsignals = []
-sos  = signal.butter(10, [0.1, 100], 'bandpass', fs=360, output='sos')
+beat_length = 300
+
+# Bandpass butterworth filter, passband 0,5 Hz - 40 Hz. 
+# Passband width is used in GAN-study
+sos  = signal.butter(20, [0.5, 40], 'bandpass', fs=Fs, output='sos')
 
 
-for i, record in enumerate(records):
-    p_signal = record.p_signal
-    locations = annotations[i].sample
-    # TODO: data to single beats and triplebeat chunks
-    splitsignal = [] 
-    last_cutoff = 0
-    for j in range(len(locations)-1):
-        Rpoint = p_signal[locations[j]]
+def read_data(sampfrom, sampto):
+    records = []
+    annotations = []
+    for num in individual_file:
+        file = filepath + num
+        record = wfdb.rdrecord(file, sampfrom=sampfrom, sampto=sampto, channels=[0]) # Lead 1
+        annotation = wfdb.rdann(file, 'atr', sampfrom=sampfrom, sampto=sampto)
+        records.append(record)
+        annotations.append(annotation)
+    
+    return records, annotations
+
+def process_data(records, annotations):
+    splitsignals = []
+    for i, record in enumerate(records):
+        p_signal = record.p_signal
+        locations = annotations[i].sample
+        splitsignal = [] 
+        last_cutoff = 0
+        for j in range(len(locations)-1):
+ 
+            if (j == 0) :
+                d_prev = 0
+            else :
+                d_prev = round((locations[j] - locations[j-1]))
+
+            d_next = round(locations[j+1] - locations[j])
+            interval_length = d_prev + (d_next - d_prev)
+            interval_third = round(interval_length/3)
+
+            first_cutoff = locations[j] - interval_third
+            second_cutoff = locations[j]  + 2 * interval_third
             
-        d = math.floor((locations[j+1] - locations[j])/2)
-        cutoff = locations[j] + d
-        
-        if (cutoff >= locations[-1]):
-            part = p_signal[last_cutoff:]
-        else:
-            part = p_signal[last_cutoff:cutoff]
+            if (second_cutoff >= locations[-1]):
+                part = p_signal[first_cutoff:]
+            else:
+               part = p_signal[first_cutoff:second_cutoff]
 
-        filtered = signal.sosfilt(sos, part)
-        splitsignal.append(filtered)
-        # do windowing
-        # calculate distance to second beat and split from half
-        # do dft
-        # do bandpass-filtering, 0.1 - 100 Hz / butterworth
-        last_cutoff = cutoff
-    splitsignals.append(splitsignal)
+            filtered = signal.sosfilt(sos, part)
 
-# TODO: split the data to 5 and 25 min
+            s = filtered.ravel()
+            #s = filtered/max(s)
+            splitsignal.append(s)
+        splitsignals.append(splitsignal)
+    
+    return splitsignals
+
+def reshape(data):
+    for sample in data:
+        for i, beat in enumerate(sample):
+            if (len(beat) > beat_length or len(beat < beat_length)):
+               resampled = signal.resample(beat, beat_length)
+               sample[i] = resampled
+    return data
+
+def create_three_beat_chunks(data):
+    chunks = []
+    for patient_sample in data:
+        patient_chunks = []
+        for i in range(len(patient_sample)-1):
+            if (i == 0) :
+                chunk = np.concatenate((patient_sample[i], patient_sample[i+1], patient_sample[i+2]))
+            if (i == len(patient_sample)-1):
+                chunk = np.concatenate((patient_sample[i-2], patient_sample[i-1], patient_sample[i]))
+            else:
+                chunk = np.concatenate((patient_sample[i-1], patient_sample[i], patient_sample[i+1]))
+            patient_chunks.append(chunk)
+        chunks.append(patient_chunks)
+    
+    return chunks
+
+
+def save_data(file, arr):
+    np.save(file, arr)
+
+def save_labels(file, arr):
+    pass
+
+def plot_data(s):
+    wfdb.plot_items(s)
+
+
+def main():
+    training_data, training_annotations = read_data(0, 10799)
+    testing_data, testing_annotations = read_data(10800, 647999)
+
+    split_training_data = process_data(training_data, training_annotations)
+    split_testing_data = process_data(testing_data, testing_annotations)
+
+    #plot_data(splitsignals[0][4])
+    training_data = reshape(split_training_data)
+    testing_data = reshape(split_testing_data)
+
+    training_chunks = create_three_beat_chunks(training_data)
+
+    save_data('X_train', training_data)
+    save_data('X_test', testing_data)
+
+
+    
+
+if __name__ == "__main__":
+    main()
