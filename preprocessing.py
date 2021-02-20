@@ -1,7 +1,6 @@
 import numpy as np
 import wfdb
 from scipy import signal
-import math
 
 file_numbers = ['100', '101', '102', '103', '104', '105', '106',
 '107', '108', '109', '111', '112', '113', '114', '115', '116', 
@@ -21,7 +20,6 @@ beat_length = 300
 # Bandpass butterworth filter, passband 0,5 Hz - 40 Hz. 
 # Passband width is used in GAN-study
 sos  = signal.butter(20, [0.5, 40], 'bandpass', fs=Fs, output='sos')
-
 
 def read_data(sampfrom, sampto):
     records = []
@@ -99,7 +97,11 @@ def save_data(file, arr):
     np.save(file, arr)
 
 def save_labels(file, arr):
-    pass
+    labels = []
+    for patient_annot in arr:
+        #print(patient_annot.symbol)
+        labels.append(patient_annot.num)
+    labels = np.save(file, labels)
 
 def plot_data(s):
     wfdb.plot_items(s)
@@ -118,10 +120,11 @@ def main():
 
     training_chunks = create_three_beat_chunks(training_data)
 
-    save_data('X_train', training_data)
-    save_data('X_test', testing_data)
+    save_data('./training/X_train', training_data)
+    save_data('./testing/X_test', testing_data)
 
-
+    save_labels('./training/y_train', training_annotations)
+    save_labels('./testing/y_test', testing_annotations)
     
 
 if __name__ == "__main__":
