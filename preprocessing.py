@@ -52,8 +52,8 @@ def process_data(records, annotations):
             interval_length = d_prev + (d_next - d_prev)
             interval_third = round(interval_length / 3)
 
-            first_cutoff = locations[j] - interval_third
-            second_cutoff = locations[j] + 2 * interval_third
+            first_cutoff = int(locations[j] - interval_third)
+            second_cutoff = int(locations[j] + 2 * interval_third)
 
             if (second_cutoff >= locations[-1]):
                 part = p_signal[first_cutoff:]
