@@ -24,7 +24,19 @@ def main():
 
     # Obtain a data loader for training set
     loader_training = get_data_loader(
+        dataset=dataset_training_chunks,
+        batch_size=configs['batch_size'],
+        shuffle=True)
+
+    # Obtain a data loader for validation set
+    loader_validation = get_data_loader(
         dataset=dataset_training,
+        batch_size=configs['batch_size'],
+        shuffle=True)
+
+    # Obtain a data loader for testing set
+    loader_testing = get_data_loader(
+        dataset=dataset_testing,
         batch_size=configs['batch_size'],
         shuffle=True)
 
@@ -82,6 +94,7 @@ def main():
         print('-----------------------------')
         print('\n', 'EPOCH ', epoch, '| LOSS MEAN ', Tensor(losses_training).mean().item())
 
+        """
         # 2. Validating performance with a validation set
         print('-----------------------------')
         print(' Running model in validation set')
@@ -111,6 +124,8 @@ def main():
 
         if path.exists('model'):
             cnn_final = torch.load('model')
+        """
+
 
         # 4. Running the model on the test set
         print('-----------------------------')
