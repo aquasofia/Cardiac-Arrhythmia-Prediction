@@ -1,6 +1,8 @@
 import numpy as np
 import wfdb
 from scipy import signal
+from pathlib import Path
+import os
 
 file_numbers = ['100', '101', '102', '103', '104', '105', '106',
                 '107', '108', '109', '111', '112', '113', '114', '115', '116',
@@ -97,6 +99,9 @@ def create_three_beat_chunks(data):
 
 
 def save_data(file, arr):
+    path = '/'.join(file.split('/')[:-1])
+    if not Path(path).exists():
+        os.mkdir(path)
     np.save(file, arr)
 
 
