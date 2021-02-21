@@ -2,6 +2,7 @@
 from typing import Optional
 import torch
 from torch.utils.data import DataLoader
+#from dataset import collate_fn
 
 
 def get_data_loader(dataset: torch.utils.data.Dataset,
@@ -16,6 +17,7 @@ def get_data_loader(dataset: torch.utils.data.Dataset,
     :param shuffle: Shall we shuffle the examples?
     :type shuffle: bool
     """
+
     return DataLoader(dataset=dataset,
                       batch_size=batch_size,
                       shuffle=shuffle)

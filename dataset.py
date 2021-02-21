@@ -1,5 +1,5 @@
-
 from torch.utils.data import Dataset
+from torch import tensor, zeros, cat
 import numpy as np
 
 
@@ -7,7 +7,6 @@ class ECGDataset(Dataset):
 
     def __init__(self,
                  data_dir: str):
-
         """An example of an object of class torch.utils.data.Dataset
 
         :type key_hot_encodings: str
@@ -17,36 +16,47 @@ class ECGDataset(Dataset):
         """
         super().__init__()
         self.key_features = np.load(data_dir + '/X.npy', allow_pickle=True)
-        self.key_class = np.load(data_dir+'/y.npy', allow_pickle=True)
+        self.key_class = np.load(data_dir + '/y.npy', allow_pickle=True)
 
     def __len__(self) \
             -> int:
-        """Returns the length of the dataset.
+        """
+        Returns the length of the dataset.
 
         :return: Length of the dataset.
         :rtype: int
         """
-        """
-        # Validate output type, if value = 0 -> return len of hot encodings
-        if self.value == 0:
-            return len(self.key_hot_encodings)
-        # Else return len of key_captions (prevents index overflow)
-        else:
-            return len(self.key_captions) 
-        """
 
-        # Here should implement a length padding for the different length sequences
         return len(self.key_features)
 
     def __getitem__(self,
                     item: int):
-        """Returns an item from the dataset.
 
+        """Returns an item from the dataset.
         :param item: Index of the item.
         :type item: int
         """
 
-        return self.key_features[item], self.key_class[item]
+        return self.key_features[item], self.key_class[item],
 
-# EOF
+"""
+def collate_fn(data):
 
+    data: is a list of tuples with (example, label, length)
+    where 'example' is a tensor of arbitrary shape
+    and label/length are scalars
+
+ _, labels, lengths = zip(*data)
+    max_len = max(lengths)
+    n_ftrs = data[0][0].size(1)
+    features = torch.zeros((len(data), max_len, n_ftrs))
+    labels = torch.tensor(labels)
+    lengths = torch.tensor(lengths)
+
+    for i in range(len(data)):
+        j, k = data[i][0].size(0), data[i][0].size(1)
+        features[i] = torch.cat([data[i][0], torch.zeros((max_len - j, k))])
+
+    return features.float(), labels.long(), lengths.long()
+    
+"""

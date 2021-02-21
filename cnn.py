@@ -1,6 +1,6 @@
 
-from torch import Tensor
-from torch.nn import Module, Conv2d, MaxPool2d, ReLU, Linear, Dropout2d
+from torch import Tensor, tensor
+from torch.nn import Module, Conv1d, MaxPool1d, ReLU, Linear, Dropout2d
 
 
 class CNNSystem(Module):
@@ -28,25 +28,25 @@ class CNNSystem(Module):
         super().__init__()
 
         # First layer : CNN
-        self.layer_1 = Conv2d(in_channels=layer_1_input_dim,
+        self.layer_1 = Conv1d(in_channels=layer_1_input_dim,
                               out_channels=layer_1_output_dim,
                               kernel_size=kernel_1,
                               stride=stride_1,
                               padding=padding_1)
 
         # Third layer : CNN
-        self.layer_2 = Conv2d(in_channels=layer_2_input_dim,
+        self.layer_2 = Conv1d(in_channels=layer_2_input_dim,
                               out_channels=layer_2_output_dim,
                               kernel_size=kernel_2,
                               stride=stride_2,
                               padding=padding_2)
 
         # Second layer : Pooling
-        self.pooling_1 = MaxPool2d(kernel_size=pooling_1_kernel,
+        self.pooling_1 = MaxPool1d(kernel_size=pooling_1_kernel,
                                    stride=pooling_1_stride)
 
         # Fourth layer : Pooling
-        self.pooling_2 = MaxPool2d(kernel_size=pooling_2_kernel,
+        self.pooling_2 = MaxPool1d(kernel_size=pooling_2_kernel,
                                    stride=pooling_2_stride)
 
         # Classifier
@@ -59,13 +59,10 @@ class CNNSystem(Module):
         # Dropout
         self.dropout = Dropout2d(dropout)
 
-    def forward(self,
-                x: Tensor) \
+    def forward(self, x: Tensor) \
             -> Tensor:
 
-        # Dataset dimensionality correction, if less than 4
-        if x.ndimension() != 4:
-            t = x.unsqueeze(1)
+        t = x[0]
 
         # Neural network layer stacking
         t = self.pooling_1(self.relu_1(self.layer_1(t)))

@@ -2,7 +2,7 @@ from os import path
 import numpy as np
 import torch
 from torch import Tensor
-from dataset import ECGDataset
+from dataset import *
 from data_init import *
 from cnn import CNNSystem
 import preprocessing
@@ -11,8 +11,6 @@ import json
 
 def main():
 
-    preprocessing.main()
-
     # Load training, validation and testing data from directory
     dataset_training = ECGDataset(data_dir='./training')
     dataset_testing = ECGDataset(data_dir='./testing')
@@ -20,11 +18,11 @@ def main():
     # dataset_validation = ECGDataset(0, 0, data_dir='validation')
 
     # Load the model and training parameters from external file
-    configs = json.load(open('config.json', 'r'))
+    configs = json.load(open('configs.json', 'r'))
 
     # Obtain a data loader for training set
     loader_training = get_data_loader(
-        dataset=dataset_training_chunks,
+        dataset=dataset_training,
         batch_size=configs['batch_size'],
         shuffle=True)
 
@@ -82,6 +80,8 @@ def main():
             # Reset gradients from the previous round
             optimizer.zero_grad()
             y_hat = cnn(x).squeeze(1)
+
+
             # Calculate loss and append to training losses array
             loss_training = loss_func(y_hat, y.type_as(y_hat))
             losses_training.append(loss_training.item())

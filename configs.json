@@ -1,6 +1,6 @@
 {
-  "batch_size": 4,
-  "shuffle": "True",
+  "batch_size": 1,
+  "shuffle": "False",
   "max_epochs": 100,
 
   "model": {
