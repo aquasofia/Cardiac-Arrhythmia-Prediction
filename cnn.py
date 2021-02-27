@@ -11,18 +11,18 @@ class CNNSystem(Module):
 
         super().__init__()
 
-        # First layer : CNN 32 neurons
+        # First layer : CNN xx neurons
 
         self.layer1 = Sequential(Conv1d(input_size, 32, kernel_size=15),
                                  ReLU(),
                                  MaxPool1d(kernel_size=6))
 
-        # 2nd layer : CNN 16 neurons
-        self.layer2 = Sequential(Conv1d(32, 16, kernel_size=15),
+        # 2nd layer : CNN 32 neurons padding c6
+        self.layer2 = Sequential(Conv1d(32, 32, kernel_size=15),
                                  ReLU(),
                                  MaxPool1d(kernel_size=6))
         
-        #3rd layer CNN not kowning neurons
+        #3rd layer CNN 16 neurons
         self.layer3 = Sequential(Conv1d(16, 16, kernel_size=15),
                                  ReLU(),
                                  MaxPool1d(kernel_size=5))
@@ -40,6 +40,7 @@ class CNNSystem(Module):
 
         # Neural network layer stacking
         t = self.layer1(x)
+        
         t = self.layer2(t)
         t = self.mlp1(t)
 
