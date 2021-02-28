@@ -49,6 +49,10 @@ data = get_data_loader(
 x, y = data[index]
   
 ```
+The CNN model configurations are set in file 
+```python
+configs.json
+```
 
 ## Contribution
 For major changes, please open an issue first to discuss what you would like to change.
