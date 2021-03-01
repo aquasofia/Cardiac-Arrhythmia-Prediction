@@ -15,10 +15,19 @@ Model consists from following python files:
 ```bash
 pip install torch
 pip install tensorflow
+pip install wfdb
+pip install scipy
 ```
 
 ## Use and development
 
+Before use do the following:
+- Create folders training, testing and chunks
+	|--CardiacArrhythmiaPrediction
+	   |--training
+	      |--chunks
+	   |--testing
+- Run preprocessing.py
 
 Model utilizes the PyTorch Librariries:
 
@@ -39,6 +48,10 @@ data = get_data_loader(
 # Dataloader returns features and class for a given index
 x, y = data[index]
   
+```
+The CNN model configurations are set in file 
+```python
+configs.json
 ```
 
 ## Contribution

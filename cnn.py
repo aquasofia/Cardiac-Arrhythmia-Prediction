@@ -1,89 +1,53 @@
 
-from torch import Tensor
-from torch.nn import Module, Conv2d, MaxPool2d, ReLU, Linear, Dropout2d
+from torch import Tensor, tensor
+from torch.nn import Module, Conv1d, MaxPool1d, ReLU, Linear, Dropout,Sequential
 
 
+## needs input dtype= float
 class CNNSystem(Module):
 
-    def __init__(self,
-                 layer_1_input_dim: int,
-                 layer_1_output_dim: int,
-                 layer_2_input_dim: int,
-                 layer_2_output_dim: int,
-                 pooling_1_kernel: int,
-                 pooling_1_stride: int,
-                 pooling_2_kernel: int,
-                 pooling_2_stride: int,
-                 kernel_1: int,
-                 kernel_2: int,
-                 stride_1: int,
-                 stride_2: int,
-                 padding_1: int,
-                 padding_2: int,
-                 input_features: int,
-                 output_features: int,
-                 dropout: float) \
+    def __init__(self) \
             -> None:
 
         super().__init__()
 
-        # First layer : CNN
-        self.layer_1 = Conv2d(in_channels=layer_1_input_dim,
-                              out_channels=layer_1_output_dim,
-                              kernel_size=kernel_1,
-                              stride=stride_1,
-                              padding=padding_1)
+        # First layer : CNN xx neurons
 
-        # Third layer : CNN
-        self.layer_2 = Conv2d(in_channels=layer_2_input_dim,
-                              out_channels=layer_2_output_dim,
-                              kernel_size=kernel_2,
-                              stride=stride_2,
-                              padding=padding_2)
+        self.layer1 = Sequential(Conv1d(1, 32, kernel_size=15,padding=7),
+                                 ReLU(),
+                                 MaxPool1d(kernel_size=4))
 
-        # Second layer : Pooling
-        self.pooling_1 = MaxPool2d(kernel_size=pooling_1_kernel,
-                                   stride=pooling_1_stride)
+        # 2nd layer : CNN 32 neurons padding c6
+        self.layer2 = Sequential(Conv1d(32, 32, kernel_size=15,padding=7),
+                                 ReLU(),
+                                 MaxPool1d(kernel_size=6))
+        
+        #3rd layer CNN 16 neurons
+        self.layer3 = Sequential(Conv1d(32, 16, kernel_size=15,padding=7),
+                                 ReLU(),
+                                 MaxPool1d(kernel_size=5))
+        # need to know input size for 1st mlp layers
+        self.mlp1 = Linear(16, 10)
+        self.mlp2 = Linear(10,5)
 
-        # Fourth layer : Pooling
-        self.pooling_2 = MaxPool2d(kernel_size=pooling_2_kernel,
-                                   stride=pooling_2_stride)
 
-        # Classifier
-        self.classifier = Linear(in_features=input_features,
-                                 out_features=output_features)
-        # Activation function
-        self.relu_1 = ReLU()
-        self.relu_2 = ReLU()
-
-        # Dropout
-        self.dropout = Dropout2d(dropout)
-
-    def forward(self,
-                x: Tensor) \
+    def forward(self, x: Tensor) \
             -> Tensor:
 
-        # Dataset dimensionality correction, if less than 4
-        if x.ndimension() != 4:
-            t = x.unsqueeze(1)
+        #t = x[0]
 
         # Neural network layer stacking
-        t = self.pooling_1(self.relu_1(self.layer_1(t)))
-        t = self.pooling_2(self.relu_2(self.layer_2(t)))
+        x = self.layer1(x)
 
-        # Adding dropout
-        t = self.dropout(t)
+        
+        x = self.layer2(x)
 
-        # t.shape: torch.Size([4, 32, 80, 4]) -> torch.Size([4, 80, 32, 4])
-        # Tensor reshaping
-        # Permute rotates tensor dimensions preserving the data order
-        a_t = t.permute(0, 2, 1, 3)
+        x = x.view(x.size(0), -1)
+        t = self.mlp1(x)
 
-        # View maps from one dimensionality to another sequentially
-        # Contiguous added for persisting the order during dimensionality change
-        # Parameter len is length of the tensor and -1 indicates last member
-        h = a_t.contiguous().view(len(x), -1)
-        y_hat = self.classifier(h)
+
+        
+        y_hat = self.mlp2(x)
 
         return y_hat
 

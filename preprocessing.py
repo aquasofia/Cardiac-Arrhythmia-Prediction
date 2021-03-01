@@ -38,26 +38,26 @@ def process_data(records, annotations):
     for i, record in enumerate(records):
         p_signal = record.p_signal
         locations = annotations[i].sample
-        splitsignal = [] 
+        splitsignal = []
         last_cutoff = 0
-        for j in range(len(locations)-1):
- 
-            if (j == 0) :
+        for j in range(len(locations) - 1):
+
+            if (j == 0):
                 d_prev = 0
-            else :
-                d_prev = round((locations[j] - locations[j-1]))
+            else:
+                d_prev = round((locations[j] - locations[j - 1]))
 
-            d_next = round(locations[j+1] - locations[j])
+            d_next = round(locations[j + 1] - locations[j])
             interval_length = d_prev + (d_next - d_prev)
-            interval_third = round(interval_length/3)
+            interval_third = round(interval_length / 3)
 
-            first_cutoff = locations[j] - interval_third
-            second_cutoff = locations[j]  + 2 * interval_third
-            
+            first_cutoff = int(locations[j] - interval_third)
+            second_cutoff = int(locations[j] + 2 * interval_third)
+
             if (second_cutoff >= locations[-1]):
                 part = p_signal[first_cutoff:]
             else:
-               part = p_signal[first_cutoff:second_cutoff]
+                part = p_signal[first_cutoff:second_cutoff]
 
             filtered = signal.sosfilt(sos, part)
 
@@ -116,11 +116,19 @@ def group_to_five_classes(annot):
 def save_data(file, arr):
     np.save(file, arr)
 
+def save_data(file, arr):
+    path = '/'.join(file.split('/')[:-1])
+    if not Path(path).exists():
+        os.mkdir(path)
+    np.save(file, arr)
+
+
 def save_labels(file, arr):
     labels = []
     for patient_annot in arr:
         labels.append(patient_annot.num)
     labels = np.save(file, labels)
+
 
 def plot_data(s):
     wfdb.plot_items(s)
@@ -152,6 +160,7 @@ def main():
     save_labels('./training/y', training_annotations)
     save_labels('./testing/y', testing_annotations)
     
+
 
 if __name__ == "__main__":
     main()
