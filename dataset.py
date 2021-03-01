@@ -38,14 +38,20 @@ class ECGDataset(Dataset):
         :param item: Index of the item.
         :type item: int
         """
-        # Pytorch expects input as shape: [N x C x L]
-        # N = Number of samples in a batch: 5
-        # C = Number of channels: 1
-        # L = Length of the signal sequence : 300
-        #features = features.permute(0, 1, 2)
 
-        features = torch.tensor(self.key_features[item], dtype=torch.float).unsqueeze(1)
-        #features = features.permute(1, 2, 0)
+        # 44 patients
+        # 128 length of heartbeat
+        #
+
+        # Pytorch expects input as shape: [N x C x L]
+        # N = Number of samples in a batch: Batch one patients all heart beats: 44
+        # C = Number of channels: 1
+        # L = Length of the signal sequence (heartbeat) : 128
+        # features = features.permute(0, 1, 2)
+
+        features = self.key_features[item]
+        features = torch.tensor(features, dtype=torch.float)
+        features = features.permute(2, 0, 1)
 
         return features, self.key_class[item]
 

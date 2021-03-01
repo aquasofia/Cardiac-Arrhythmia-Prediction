@@ -70,6 +70,7 @@ def main():
         # 1. Training the neural network with training set
         print('-----------------------------')
         print(' Running model in training set')
+
         for x, y in loader_training:
             # Reset gradients from the previous round
             optimizer.zero_grad()

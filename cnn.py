@@ -53,6 +53,7 @@ class CNNSystem(Module):
             -> Tensor:
 
         #t = x[0]
+        x = x if x.ndimension() == 4 else x.unsqueeze(1)
 
         # Neural network layer stacking
         x = self.layer1(x)
