@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 from torch import tensor, zeros, cat
 import numpy as np
+import torch
 
 
 class ECGDataset(Dataset):
@@ -16,6 +17,7 @@ class ECGDataset(Dataset):
         """
         super().__init__()
         self.key_features = np.load(data_dir + '/X.npy', allow_pickle=True)
+
         self.key_class = np.load(data_dir + '/y.npy', allow_pickle=True)
 
     def __len__(self) \
@@ -36,27 +38,14 @@ class ECGDataset(Dataset):
         :param item: Index of the item.
         :type item: int
         """
+        # Pytorch expects input as shape: [N x C x L]
+        # N = Number of samples in a batch: 5
+        # C = Number of channels: 1
+        # L = Length of the signal sequence : 300
+        #features = features.permute(0, 1, 2)
 
-        return self.key_features[item], self.key_class[item],
+        features = torch.tensor(self.key_features[item], dtype=torch.float).unsqueeze(1)
+        #features = features.permute(1, 2, 0)
 
-"""
-def collate_fn(data):
+        return features, self.key_class[item]
 
-    data: is a list of tuples with (example, label, length)
-    where 'example' is a tensor of arbitrary shape
-    and label/length are scalars
-
- _, labels, lengths = zip(*data)
-    max_len = max(lengths)
-    n_ftrs = data[0][0].size(1)
-    features = torch.zeros((len(data), max_len, n_ftrs))
-    labels = torch.tensor(labels)
-    lengths = torch.tensor(lengths)
-
-    for i in range(len(data)):
-        j, k = data[i][0].size(0), data[i][0].size(1)
-        features[i] = torch.cat([data[i][0], torch.zeros((max_len - j, k))])
-
-    return features.float(), labels.long(), lengths.long()
-    
-"""

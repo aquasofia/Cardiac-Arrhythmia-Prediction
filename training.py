@@ -26,12 +26,6 @@ def main():
         batch_size=configs['batch_size'],
         shuffle=True)
 
-    # Obtain a data loader for validation set
-    loader_validation = get_data_loader(
-        dataset=dataset_training,
-        batch_size=configs['batch_size'],
-        shuffle=True)
-
     # Obtain a data loader for testing set
     loader_testing = get_data_loader(
         dataset=dataset_testing,
@@ -79,8 +73,7 @@ def main():
         for x, y in loader_training:
             # Reset gradients from the previous round
             optimizer.zero_grad()
-            y_hat = cnn(x).squeeze(1)
-
+            y_hat = cnn(x)
 
             # Calculate loss and append to training losses array
             loss_training = loss_func(y_hat, y.type_as(y_hat))
@@ -94,40 +87,7 @@ def main():
         print('-----------------------------')
         print('\n', 'EPOCH ', epoch, '| LOSS MEAN ', Tensor(losses_training).mean().item())
 
-        """
-        # 2. Validating performance with a validation set
-        print('-----------------------------')
-        print(' Running model in validation set')
-        for x, y in loader_validation:
-            # Reset gradients from the previous round
-            optimizer.zero_grad()
-            y_hat = cnn(x).squeeze(1)
-            # Calculate loss and append to training losses array
-            loss_validation = loss_func(y_hat, y.type_as(y_hat))
-            losses_validation.append(loss_validation.item())
-            print(' loss', loss_validation.item())
-
-        print('-----------------------------')
-        print('\n', ' EPOCH ', epoch, '| LOSS MEAN ', Tensor(losses_validation).mean().item())
-
-        # 3. Investigating the model performance and performing early stopping
-        if loss_validation < minimum_loss:
-            minimum_loss = loss_validation
-            not_improved = 0
-            torch.save(cnn, 'model')
-        else:
-            not_improved += 1
-
-        if epoch > 5 and not_improved == epoch_stop:
-            print(' Early stopping')
-            break
-
-        if path.exists('model'):
-            cnn_final = torch.load('model')
-        """
-
-
-        # 4. Running the model on the test set
+        # Running the model on the test set
         print('-----------------------------')
         print(' Running model on test set')
         for x, y in loader_testing:
@@ -143,10 +103,9 @@ def main():
         print('\n', 'EPOCH ', epoch, '| LOSS MEAN ', Tensor(losses_testing).mean().item())
 
     print('\n', 'RESULTS')
-    print(' TRAINING LOSS: ', Tensor(losses_training).mean().item(), ' | '
-                                                                     ' VALIDATION LOSS: ',
-          Tensor(losses_validation).mean().item(), ' | '
-                                                   ' TESTING LOSS: ', Tensor(losses_testing).mean().item())
+    print(' TRAINING LOSS: ', Tensor(losses_training).mean().item(), ' | ',
+          ' VALIDATION LOSS: ',Tensor(losses_validation).mean().item(), ' | ',
+          ' TESTING LOSS: ', Tensor(losses_testing).mean().item())
 
 
 if __name__ == '__main__':
