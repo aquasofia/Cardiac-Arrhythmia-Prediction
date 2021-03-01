@@ -4,12 +4,14 @@ import wfdb
 from scipy import signal
 import os
 
-file_numbers = ['100', '101', '102', '103', '104', '105', '106',
-'107', '108', '109', '111', '112', '113', '114', '115', '116', 
+file_numbers = ['100', '101', '103', '105', '106',
+'108', '109', '111', '112', '113', '114', '115', '116', 
 '117', '118', '119', '121', '122', '123', '124', '200', '201', 
 '202', '203', '205', '207', '208', '209', '210', '212', '213',
-'214', '215', '217', '219', '220', '221', '222', '223', '228', 
+'214', '215', '219', '220', '221', '222', '223', '228', 
 '230', '231', '232', '233', '234']
+
+#paced = ['102', '104', '107', '217'] #these are excluded from the data
 
 #individual_file = ['100']
 
@@ -32,10 +34,11 @@ def read_data(sampfrom, sampto):
         annotation = wfdb.rdann(file, 'atr', sampfrom=sampfrom, sampto=sampto)
         records.append(record)
         annotations.append(annotation)
-    
+
     return records, annotations
 
-def process_data(records, annotations):
+
+def process_data(records, annotations, testing=False):
     splitsignals = []
     for i, record in enumerate(records):
         p_signal = record.p_signal
@@ -44,31 +47,55 @@ def process_data(records, annotations):
         last_cutoff = 0
         for j in range(len(locations) - 1):
 
-            if (j == 0):
-                d_prev = 0
-            else:
-                d_prev = round((locations[j] - locations[j - 1]))
+            R_peak = locations[j] 
+            next_R_peak = locations[j + 1]
+            if (testing):
+                R_peak = R_peak - 10800
+                next_R_peak = next_R_peak - 10800
 
-            d_next = round(locations[j + 1] - locations[j])
-            interval_length = d_prev + (d_next - d_prev)
+            if (j == 0):
+                # distance to the start of the ECG
+                #print(record.record_name + " " + str(len(p_signal)) + " " + str(R_peak))
+                distance_prev_beat = int(round(R_peak))
+            else:
+                # distance to the previous R-peak
+                if (testing):
+                    last_R_peak = locations[j - 1] - 10800
+                else:
+                    last_R_peak = locations[j - 1]
+                distance_prev_beat = int(round(R_peak - last_R_peak))
+
+            # distance to next R-peak
+            distance_next_beat = int(round(next_R_peak - R_peak))
+
+            # lenght of the interval from previous R-peak to next R-peak
+            interval_length = distance_prev_beat + (distance_next_beat - distance_prev_beat)
             interval_third = round(interval_length / 3)
 
-            first_cutoff = int(locations[j] - interval_third)
-            second_cutoff = int(locations[j] + 2 * interval_third)
+            if (j == 0 or interval_third > R_peak):
+                first_cutoff = 0
+            else:
+                first_cutoff = int(R_peak - interval_third)
+            
+            second_cutoff = int(R_peak + 2 * interval_third)
 
-            if (second_cutoff >= locations[-1]):
+            if (second_cutoff >= locations[-1] or second_cutoff > len(p_signal)):
                 part = p_signal[first_cutoff:]
             else:
                 part = p_signal[first_cutoff:second_cutoff]
+                #if (len(part) == 0):
+                #    print(record.record_name + " " + str(locations[j]) + " second " + str(p_signal[second_cutoff]) +  " " + str(first_cutoff)+ ":" + str(second_cutoff))
 
             filtered = signal.sosfilt(sos, part)
 
             s = filtered.ravel()
-            #s = filtered/max(s)
+            s = filtered/max(np.abs(s))
             splitsignal.append(s)
+        #print(len(splitsignal))
         splitsignals.append(splitsignal)
     
     return splitsignals
+
 
 def reshape(data):
     for sample in data:
@@ -77,6 +104,7 @@ def reshape(data):
                resampled = signal.resample(beat, beat_length)
                sample[i] = resampled
     return data
+
 
 def create_three_beat_chunks(data):
     chunks = []
@@ -93,6 +121,7 @@ def create_three_beat_chunks(data):
         chunks.append(patient_chunks)
     
     return chunks
+
 
 def group_to_five_classes(annot):
     # N, S, V, F, Q
@@ -115,8 +144,10 @@ def group_to_five_classes(annot):
         
     return annot
 
+
 def save_data(file, arr):
     np.save(file, arr)
+
 
 def save_data(file, arr):
     path = '/'.join(file.split('/')[:-1])
@@ -137,18 +168,18 @@ def plot_data(s):
 
 
 def main():
-    training_data, training_annotations = read_data(0, 10799)
-    testing_data, testing_annotations = read_data(10800, 647999)
+    training_data, training_annotations = read_data(0, 10800)
+    testing_data, testing_annotations = read_data(10800, 648000)
 
     split_training_data = process_data(training_data, training_annotations)
-    split_testing_data = process_data(testing_data, testing_annotations)
+    split_testing_data = process_data(testing_data, testing_annotations, True)
 
     
     training_data = reshape(split_training_data)
     testing_data = reshape(split_testing_data)
-    #plot_data(training_data[0][4])
+    #plot_data(testing_data[24][1500])
 
-    training_chunks = create_three_beat_chunks(training_data)
+    #training_chunks = create_three_beat_chunks(training_data)
 
     training_annotations = group_to_five_classes(training_annotations)
     testing_annotations = group_to_five_classes(testing_annotations)
@@ -156,8 +187,8 @@ def main():
     save_data('./training/X', training_data)
     save_data('./testing/X', testing_data)
 
-    save_data('./training/chunks/X', training_chunks)
-    save_labels('./training/chunks/y', training_annotations)
+    #save_data('./training/chunks/X', training_chunks)
+    #save_labels('./training/chunks/y', training_annotations)
 
     save_labels('./training/y', training_annotations)
     save_labels('./testing/y', testing_annotations)
