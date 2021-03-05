@@ -39,15 +39,10 @@ class ECGDataset(Dataset):
         :type item: int
         """
 
-        # 44 patients
-        # 128 length of heartbeat
-        #
-
         # Pytorch expects input as shape: [N x C x L]
         # N = Number of samples in a batch: Batch one patients all heart beats: 44
         # C = Number of channels: 1
-        # L = Length of the signal sequence (heartbeat) : 128
-        # features = features.permute(0, 1, 2)
+        # L = Length of the signal sequence (one heartbeat) : 128
 
         features = self.key_features[item]
         features = torch.tensor(features, dtype=torch.float)
