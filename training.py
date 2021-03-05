@@ -11,9 +11,8 @@ import json
 
 def main():
 
-    # Load training, validation and testing data from directory
+    # Load training data from the directory
     dataset_training = ECGDataset(data_dir='./training')
-    dataset_testing = ECGDataset(data_dir='./testing')
     # dataset_training_chunks = ECGDataset(data_dir='./training/chunks')
     # dataset_validation = ECGDataset(0, 0, data_dir='validation')
 
@@ -23,12 +22,6 @@ def main():
     # Obtain a data loader for training set
     loader_training = get_data_loader(
         dataset=dataset_training,
-        batch_size=configs['batch_size'],
-        shuffle=True)
-
-    # Obtain a data loader for testing set
-    loader_testing = get_data_loader(
-        dataset=dataset_testing,
         batch_size=configs['batch_size'],
         shuffle=True)
 
@@ -57,8 +50,6 @@ def main():
     loss_func = torch.nn.CrossEntropyLoss()
     # Initialize arrays for losses
     losses_training = []
-    losses_validation = []
-    losses_testing = []
     # Initialize minimum_loss to infinity (arbitrary high number)
     minimum_loss = np.inf
     # Initialize parameters for early stop
@@ -75,10 +66,10 @@ def main():
             # Reset gradients from the previous round
             optimizer.zero_grad()
             x = x.squeeze(0)
-            # Remove the batch dimension on 0 as batch = 1
+            # Feed data to the model
             y_hat = cnn(x)
             # Calculate loss and append to training losses array
-            y = y.type_as(y_hat).permute(1, 0)[0:-1]
+            y = torch.LongTensor(y)
             loss_training = loss_func(y_hat, y)
             losses_training.append(loss_training.item())
             print(' loss', loss_training.item())
@@ -87,28 +78,11 @@ def main():
             # Optimize network weights
             optimizer.step()
         cnn.eval()
+
         print('-----------------------------')
         print('\n', 'EPOCH ', epoch, '| LOSS MEAN ', Tensor(losses_training).mean().item())
 
-        # Running the model on the test set
-        print('-----------------------------')
-        print(' Running model on test set')
-        for x, y in loader_testing:
-            # Reset gradients from the previous round
-            optimizer.zero_grad()
-            y_hat = cnn_final(x).squeeze(1)
-            # Calculate loss and append to training losses array
-            loss_testing = loss_func(y_hat, y.type_as(y_hat))
-            losses_testing.append(loss_testing.item())
-            print(' loss', loss_testing.item())
-
-        print('-----------------------------')
-        print('\n', 'EPOCH ', epoch, '| LOSS MEAN ', Tensor(losses_testing).mean().item())
-
-    print('\n', 'RESULTS')
-    print(' TRAINING LOSS: ', Tensor(losses_training).mean().item(), ' | ',
-          ' VALIDATION LOSS: ',Tensor(losses_validation).mean().item(), ' | ',
-          ' TESTING LOSS: ', Tensor(losses_testing).mean().item())
+        torch.save(cnn, 'cnn_model')
 
 
 if __name__ == '__main__':

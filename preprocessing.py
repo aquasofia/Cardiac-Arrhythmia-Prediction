@@ -153,15 +153,15 @@ def group_to_five_classes(annot):
         annotations = []
         for i, sym in enumerate(patient_annot.symbol):
             if (sym == 'N' or sym == 'L' or sym == 'R' or sym == 'j' or sym == 'e'): # N = 1
-                annotations.append(1)
+                annotations.append(0)
             elif (sym == 'S' or sym == 'a' or sym == 'J' or sym == 'A'): # S = 9
-                annotations.append(9)
+                annotations.append(1)
             elif (sym == 'V' or sym == '!' or sym == 'E'): # V = 5
-                annotations.append(5)
+                annotations.append(2)
             elif (sym == 'F'): # F = 6
-                annotations.append(6)
+                annotations.append(3)
             else: # Q = 13
-                annotations.append(13)
+                annotations.append(4)
         del annotations[-1]
         numerical_annotations.append(annotations)
     
