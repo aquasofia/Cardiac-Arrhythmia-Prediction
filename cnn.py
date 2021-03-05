@@ -46,8 +46,10 @@ class CNNSystem(Module):
                                  MaxPool1d(kernel_size=5))
 
         # need to know input size for 1st mlp layers
-        self.mlp1 = Linear(16, 10)
-        self.mlp2 = Linear(10, 5)
+        # original self.mlp1 = Linear(16, 10)
+        self.mlp1 = Linear(160, 10)
+        # original self.mlp2 = Linear(10, 5)
+        self.mlp2 = Linear(160, 5)
 
     def forward(self, x: Tensor) \
             -> Tensor:

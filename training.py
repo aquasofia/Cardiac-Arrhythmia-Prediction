@@ -14,7 +14,7 @@ def main():
     # Load training, validation and testing data from directory
     dataset_training = ECGDataset(data_dir='./training')
     dataset_testing = ECGDataset(data_dir='./testing')
-    #dataset_training_chunks = ECGDataset(data_dir='./training/chunks')
+    # dataset_training_chunks = ECGDataset(data_dir='./training/chunks')
     # dataset_validation = ECGDataset(0, 0, data_dir='validation')
 
     # Load the model and training parameters from external file
@@ -54,7 +54,7 @@ def main():
     # For a binary classifier ADAM optimizer
     optimizer = torch.optim.Adam(cnn.parameters())
     # For a binary classifier: Logarithmic-Loss and Sigmoid activation
-    loss_func = torch.nn.BCEWithLogitsLoss()
+    loss_func = torch.nn.CrossEntropyLoss()
     # Initialize arrays for losses
     losses_training = []
     losses_validation = []
@@ -78,7 +78,8 @@ def main():
             # Remove the batch dimension on 0 as batch = 1
             y_hat = cnn(x)
             # Calculate loss and append to training losses array
-            loss_training = loss_func(y_hat, y.type_as(y_hat))
+            y = y.type_as(y_hat).permute(1, 0)[0:-1]
+            loss_training = loss_func(y_hat, y)
             losses_training.append(loss_training.item())
             print(' loss', loss_training.item())
             # Initiate backpropagation on the basis of the loss
