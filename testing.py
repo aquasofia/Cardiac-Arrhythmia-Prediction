@@ -31,11 +31,23 @@ def main():
     print('-----------------------------')
     print(' Running model on test set')
     for x, y in loader_testing:
-        y_hat = model(x).squeeze(1)
+        num_correct = 0
+        num_samples = 0
+        x = x.squeeze(0)
+        # Feed data to the model
+        y_hat = model(x)
         # Calculate loss and append to training losses array
-        loss_testing = loss_func(y_hat, y.type_as(y_hat))
+        y = torch.LongTensor(y)
+        loss_testing = loss_func(y_hat, y)
         losses_testing.append(loss_testing.item())
         print(' loss', loss_testing.item())
+
+        _, predictions = y_hat.max(1)
+        num_correct += (predictions == y).sum()
+        num_samples += predictions.size(0)
+
+    print(f'Got {num_correct} / {num_samples} with accuracy {float(num_correct) / float(num_samples) * 100:.2f}')
+    model.eval()
 
     print('\n', 'RESULTS')
     print(' TESTING LOSS: ', Tensor(losses_testing).mean().item())

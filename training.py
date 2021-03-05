@@ -63,6 +63,8 @@ def main():
         print(' Running model in training set')
 
         for x, y in loader_training:
+            num_correct = 0
+            num_samples = 0
             # Reset gradients from the previous round
             optimizer.zero_grad()
             x = x.squeeze(0)
@@ -77,6 +79,12 @@ def main():
             loss_training.backward()
             # Optimize network weights
             optimizer.step()
+
+            _, predictions = y_hat.max(1)
+            num_correct += (predictions == y).sum()
+            num_samples += predictions.size(0)
+
+        print(f'Got {num_correct} / {num_samples} with accuracy {float(num_correct) / float(num_samples) * 100:.2f}')
         cnn.eval()
 
         print('-----------------------------')
