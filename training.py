@@ -14,7 +14,7 @@ def main():
     # Load training, validation and testing data from directory
     dataset_training = ECGDataset(data_dir='./training')
     dataset_testing = ECGDataset(data_dir='./testing')
-    dataset_training_chunks = ECGDataset(data_dir='./training/chunks')
+    #dataset_training_chunks = ECGDataset(data_dir='./training/chunks')
     # dataset_validation = ECGDataset(0, 0, data_dir='validation')
 
     # Load the model and training parameters from external file
@@ -74,8 +74,9 @@ def main():
         for x, y in loader_training:
             # Reset gradients from the previous round
             optimizer.zero_grad()
+            x = x.squeeze(0)
+            # Remove the batch dimension on 0 as batch = 1
             y_hat = cnn(x)
-
             # Calculate loss and append to training losses array
             loss_training = loss_func(y_hat, y.type_as(y_hat))
             losses_training.append(loss_training.item())

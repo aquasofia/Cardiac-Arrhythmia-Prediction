@@ -40,29 +40,23 @@ class CNNSystem(Module):
                                  ReLU(),
                                  MaxPool1d(kernel_size=6))
         
-        #3rd layer CNN 16 neurons
+        # 3rd layer CNN 16 neurons
         self.layer3 = Sequential(Conv1d(32, 16, kernel_size=15, padding=7),
                                  ReLU(),
                                  MaxPool1d(kernel_size=5))
 
         # need to know input size for 1st mlp layers
         self.mlp1 = Linear(16, 10)
-        self.mlp2 = Linear(10,5)
+        self.mlp2 = Linear(10, 5)
 
     def forward(self, x: Tensor) \
             -> Tensor:
 
-        #t = x[0]
-        x = x if x.ndimension() == 4 else x.unsqueeze(1)
-
         # Neural network layer stacking
         x = self.layer1(x)
-
         x = self.layer2(x)
-
         x = x.view(x.size(0), -1)
         t = self.mlp1(x)
-        
         y_hat = self.mlp2(x)
 
         return y_hat
