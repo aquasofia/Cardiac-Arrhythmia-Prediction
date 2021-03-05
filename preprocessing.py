@@ -3,13 +3,18 @@ import numpy as np
 import wfdb
 from scipy import signal
 import os
+import random
 
-file_numbers = ['100', '101', '103', '105', '106',
+all_files = ['100', '101', '103', '105', '106',
 '108', '109', '111', '112', '113', '114', '115', '116', 
 '117', '118', '119', '121', '122', '123', '124', '200', '201', 
 '202', '203', '205', '207', '208', '209', '210', '212', '213',
 '214', '215', '219', '220', '221', '222', '223', '228', 
 '230', '231', '232', '233', '234']
+
+common_training_data = ['100', '101', '103', '105', '106',
+'108', '109', '111', '112', '113', '114', '115', '116', 
+'117', '118', '119', '121', '122', '123', '124']
 
 #paced = ['102', '104', '107', '217'] #these are excluded from the data
 
@@ -25,10 +30,10 @@ beat_length = 128
 # Passband width is used in GAN-study
 sos  = signal.butter(20, [0.5, 40], 'bandpass', fs=Fs, output='sos')
 
-def read_data(sampfrom, sampto):
+def read_data(sampfrom, sampto, filegroup):
     records = []
     annotations = []
-    for num in file_numbers:
+    for num in filegroup:
         file = filepath + num
         record = wfdb.rdrecord(file, sampfrom=sampfrom, sampto=sampto, channels=[0]) # Lead 1
         annotation = wfdb.rdann(file, 'atr', sampfrom=sampfrom, sampto=sampto)
@@ -129,8 +134,9 @@ def group_to_five_classes(annot):
      21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
      32, 33, 35, 36, 37, 38, 39, 40, 41]
 
-    for patient_annot in annot:
-        for i, num in enumerate(patient_annot.num):
+    """for patient_annot in annot:
+        for i, sym in enumerate(patient_annot.symbol):
+            #print(patient_annot.num)
             if (num == 2 or num == 3 or num == 11 or num == 34): # N = 1
                 patient_annot.num[i] = 1
             elif (num == 4 or num == 8 or num == 7): # S = 9
@@ -140,10 +146,80 @@ def group_to_five_classes(annot):
             elif (num == 6): # F = 6
                 patient_annot.num[i] = 6
             else: # Q = 13
-                patient_annot.num[i] = 13
-        
-    return annot
+                patient_annot.num[i] = 13"""
 
+    numerical_annotations = []
+    for patient_annot in annot:
+        annotations = []
+        for i, sym in enumerate(patient_annot.symbol):
+            if (sym == 'N' or sym == 'L' or sym == 'R' or sym == 'j' or sym == 'e'): # N = 1
+                annotations.append(1)
+            elif (sym == 'S' or sym == 'a' or sym == 'J' or sym == 'A'): # S = 9
+                annotations.append(9)
+            elif (sym == 'V' or sym == '!' or sym == 'E'): # V = 5
+                annotations.append(5)
+            elif (sym == 'F'): # F = 6
+                annotations.append(6)
+            else: # Q = 13
+                annotations.append(13)
+        del annotations[-1]
+        numerical_annotations.append(annotations)
+    
+    return numerical_annotations
+
+def create_common_set(data, annot):
+    #create bins
+    N = []
+    S = []
+    V = []
+    F = []
+    Q = []
+
+    # from N, S and V types select randomly 75 samples each
+    # add all F (13) and Q (7) types
+    # resulting in 245 samples
+    common = []
+    labels = []
+    #print(len(data[1][1]))
+    for i, patient_sample in enumerate(data):
+        for j, sample in enumerate(patient_sample):
+            #print(str(i) + ' ' + str(j))
+            #print(len(annot[i]))
+            #print(len(patient_sample))
+            if (annot[i][j] == 1 ):
+                N.append([i,j])
+            elif (annot[i][j] == 9 ):
+                S.append([i,j])
+            elif (annot[i][j] == 5 ):
+                V.append([i,j])
+            elif (annot[i][j] == 6 ):
+                common.append(sample)
+                labels.append(annot[i][j])
+            elif (annot[i][j] == 13 ):
+                common.append(sample)
+                labels.append(annot[i][j])
+
+    for i in range(75):
+        r = random.randint(0, len(N)-1)
+        a, b = N[r]
+        common.append(data[a][b])
+        labels.append(annot[a][b])
+
+        r = random.randint(0, len(S)-1)
+        a, b = S[r]
+        common.append(data[a][b])
+        labels.append(annot[a][b])
+
+        r = random.randint(0, len(V)-1)
+        a, b = V[r]
+        common.append(data[a][b])
+        labels.append(annot[a][b])
+    
+    return common, labels
+        
+def print_annotations(ann):
+    for patient in ann:
+        print(patient)
 
 def save_data(file, arr):
     np.save(file, arr)
@@ -156,11 +232,17 @@ def save_data(file, arr):
     np.save(file, arr)
 
 
-def save_labels(file, arr):
+"""def save_labels(file, arr):
     labels = []
     for patient_annot in arr:
         labels.append(patient_annot.num)
-    labels = np.save(file, labels)
+    labels = np.save(file, labels)"""
+
+def save_labels(file, arr):
+    #labels = []
+    #for patient_annot in arr:
+    #    labels.append(patient_annot.num)
+    labels = np.save(file, arr)
 
 
 def plot_data(s):
@@ -168,8 +250,15 @@ def plot_data(s):
 
 
 def main():
-    training_data, training_annotations = read_data(0, 10800)
-    testing_data, testing_annotations = read_data(10800, 648000)
+    training_data, training_annotations = read_data(0, 10800, all_files)
+    testing_data, testing_annotations = read_data(10800, 648000, all_files)
+    #common_data, common_annotations = read_data(0, 648000, common_training_data)
+
+    #print_annotations(common_annotations)
+    #split_common_data = process_data(common_data, common_annotations)
+    #common_data = reshape(split_common_data)
+    #common_annotations = group_to_five_classes(training_annotations)
+    #common_data, common_annotations = create_common_set(common_data, common_annotations)    
 
     split_training_data = process_data(training_data, training_annotations)
     split_testing_data = process_data(testing_data, testing_annotations, True)
@@ -186,6 +275,9 @@ def main():
 
     save_data('./training/X', training_data)
     save_data('./testing/X', testing_data)
+
+    #save_data('./training/common/X', common_data)
+    #save_data('./training/common/y', common_annotations)
 
     #save_data('./training/chunks/X', training_chunks)
     #save_labels('./training/chunks/y', training_annotations)
