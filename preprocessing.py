@@ -22,7 +22,6 @@ common_training_data = ['100', '101', '103', '105', '106',
 
 filepath = './mit-bih-arrhythmia-database-1.0.0/'
 
-
 Fs = 360 # MIT-BIH sampling frequency
 beat_length = 128
 
@@ -128,28 +127,15 @@ def create_three_beat_chunks(data):
     return chunks
 
 
-def group_to_five_classes(annot):
+def group_to_five_classes(data, annot):
     # N, S, V, F, Q
     unknown = [0, 12, 14, 15, 16, 17, 18, 19, 20,
      21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
      32, 33, 35, 36, 37, 38, 39, 40, 41]
 
-    """for patient_annot in annot:
-        for i, sym in enumerate(patient_annot.symbol):
-            #print(patient_annot.num)
-            if (num == 2 or num == 3 or num == 11 or num == 34): # N = 1
-                patient_annot.num[i] = 1
-            elif (num == 4 or num == 8 or num == 7): # S = 9
-                patient_annot.num[i] = 9
-            elif (num == 31 or num == 10): # V = 5
-                patient_annot.num[i] = 5
-            elif (num == 6): # F = 6
-                patient_annot.num[i] = 6
-            else: # Q = 13
-                patient_annot.num[i] = 13"""
-
     numerical_annotations = []
-    for patient_annot in annot:
+    removed_samples = []
+    for j, patient_annot in enumerate(annot):
         annotations = []
         for i, sym in enumerate(patient_annot.symbol):
             if (sym == 'N' or sym == 'L' or sym == 'R' or sym == 'j' or sym == 'e'): # N = 1
@@ -160,19 +146,25 @@ def group_to_five_classes(annot):
                 annotations.append(2)
             elif (sym == 'F'): # F = 6
                 annotations.append(3)
-            else: # Q = 13
+            elif (sym == 'Q'): # Q = 13
                 annotations.append(4)
+            else:
+                removed_samples.append([j,i])
         del annotations[-1]
         numerical_annotations.append(annotations)
     
-    return numerical_annotations
+    #remove samples from unknown classes
+    for i,j in reversed(removed_samples):
+        del data[i][j]
+
+    return data, numerical_annotations
 
 def create_common_set(data, annot):
     #create bins
     N = []
     S = []
     V = []
-    F = []
+    #F = []
     Q = []
 
     # from N, S and V types select randomly 75 samples each
@@ -180,24 +172,23 @@ def create_common_set(data, annot):
     # resulting in 245 samples
     common = []
     labels = []
-    #print(len(data[1][1]))
     for i, patient_sample in enumerate(data):
         for j, sample in enumerate(patient_sample):
-            #print(str(i) + ' ' + str(j))
-            #print(len(annot[i]))
-            #print(len(patient_sample))
-            if (annot[i][j] == 1 ):
+            if (annot[i][j] == 0 ):
                 N.append([i,j])
-            elif (annot[i][j] == 9 ):
+            elif (annot[i][j] == 1 ):
                 S.append([i,j])
-            elif (annot[i][j] == 5 ):
+            elif (annot[i][j] == 2 ):
                 V.append([i,j])
-            elif (annot[i][j] == 6 ):
+            elif (annot[i][j] == 3 ):
                 common.append(sample)
                 labels.append(annot[i][j])
-            elif (annot[i][j] == 13 ):
+            elif (annot[i][j] == 4 ):
+                Q.append([i,j])
                 common.append(sample)
                 labels.append(annot[i][j])
+    
+    print(len(Q))
 
     for i in range(75):
         r = random.randint(0, len(N)-1)
@@ -252,13 +243,13 @@ def plot_data(s):
 def main():
     training_data, training_annotations = read_data(0, 10800, all_files)
     testing_data, testing_annotations = read_data(10800, 648000, all_files)
-    #common_data, common_annotations = read_data(0, 648000, common_training_data)
+    common_data, common_annotations = read_data(0, 648000, common_training_data)
 
     #print_annotations(common_annotations)
-    #split_common_data = process_data(common_data, common_annotations)
-    #common_data = reshape(split_common_data)
-    #common_annotations = group_to_five_classes(training_annotations)
-    #common_data, common_annotations = create_common_set(common_data, common_annotations)    
+    split_common_data = process_data(common_data, common_annotations)
+    common_data = reshape(split_common_data)
+    common_data, common_annotations = group_to_five_classes(common_data, common_annotations)
+    common_data, common_annotations = create_common_set(common_data, common_annotations)    
 
     split_training_data = process_data(training_data, training_annotations)
     split_testing_data = process_data(testing_data, testing_annotations, True)
@@ -270,14 +261,14 @@ def main():
 
     #training_chunks = create_three_beat_chunks(training_data)
 
-    training_annotations = group_to_five_classes(training_annotations)
-    testing_annotations = group_to_five_classes(testing_annotations)
+    training_data, training_annotations = group_to_five_classes(training_data, training_annotations)
+    testing_data, testing_annotations = group_to_five_classes(testing_data, testing_annotations)
 
     save_data('./training/X', training_data)
     save_data('./testing/X', testing_data)
 
-    #save_data('./training/common/X', common_data)
-    #save_data('./training/common/y', common_annotations)
+    save_data('./training/common/X', common_data)
+    save_data('./training/common/y', common_annotations)
 
     #save_data('./training/chunks/X', training_chunks)
     #save_labels('./training/chunks/y', training_annotations)
