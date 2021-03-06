@@ -45,12 +45,13 @@ def main():
         _, predictions = y_hat.max(1)
         num_correct += (predictions == y).sum()
         num_samples += predictions.size(0)
+        print(predictions, y)
 
-    print(f'Got {num_correct} / {num_samples} with accuracy {float(num_correct) / float(num_samples) * 100:.2f}')
     model.eval()
 
     print('\n', 'RESULTS')
     print(' TESTING LOSS: ', Tensor(losses_testing).mean().item())
+    print(f'In total {num_correct} / {num_samples} with accuracy of {float(num_correct) / float(num_samples) * 100:.2f}')
 
 
 if __name__ == '__main__':
