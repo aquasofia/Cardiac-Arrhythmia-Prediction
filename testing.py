@@ -2,6 +2,7 @@ from torch import Tensor
 from dataset import *
 from data_init import *
 import json
+from sklearn.metrics import multilabel_confusion_matrix, classification_report
 
 
 def main():
@@ -26,6 +27,8 @@ def main():
 
     # For a binary classifier: Logarithmic-Loss and Sigmoid activation
     loss_func = torch.nn.CrossEntropyLoss()
+    y_pred = []
+    y_true = []
 
     # Running the model on the test set
     print('-----------------------------')
@@ -45,13 +48,32 @@ def main():
         _, predictions = y_hat.max(1)
         num_correct += (predictions == y).sum()
         num_samples += predictions.size(0)
-        print(predictions, y)
+
+        # Placeholders for class-wise binary classification
+        a = [0, 0, 0, 0, 0]
+        b = [0, 0, 0, 0, 0]
+
+        # Construct batch-wise binary map for estimated labels
+        for i in predictions:
+            a[i.item()] = 1
+        y_pred.append(a)
+        # Construct batch-wise binary map for ground truth
+        for j in y:
+            b[j.item()] = 1
+        y_true.append(b)
 
     model.eval()
+    # Build a confusion matrix
+    confusion_mat = multilabel_confusion_matrix(y_true, y_pred)
 
     print('\n', 'RESULTS')
-    print(' TESTING LOSS: ', Tensor(losses_testing).mean().item())
-    print(f'In total {num_correct} / {num_samples} with accuracy of {float(num_correct) / float(num_samples) * 100:.2f}')
+    print('-----------------------------')
+    print(' Testing loss: ', Tensor(losses_testing).mean().item())
+    print(f' Classified in total of {num_correct}/{num_samples} samples')
+    print(f' With accuracy of {float(num_correct) / float(num_samples) * 100:.2f}')
+    print(' Classification report')
+    print(classification_report(y_true, y_pred))
+
 
 
 if __name__ == '__main__':

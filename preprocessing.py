@@ -59,7 +59,7 @@ def process_data(records, annotations, testing=False):
 
             if (j == 0):
                 # distance to the start of the ECG
-                #print(record.record_name + " " + str(len(p_signal)) + " " + str(R_peak))
+                # print(record.record_name + " " + str(len(p_signal)) + " " + str(R_peak))
                 distance_prev_beat = int(round(R_peak))
             else:
                 # distance to the previous R-peak
