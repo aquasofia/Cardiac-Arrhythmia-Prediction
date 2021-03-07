@@ -1,12 +1,12 @@
-from os import path
-import numpy as np
-import torch
+from cnn import CNNSystem
 from torch import Tensor
 from dataset import *
 from data_init import *
-from cnn import CNNSystem
-import preprocessing
 import json
+from sklearn.metrics import multilabel_confusion_matrix, classification_report, roc_curve, auc
+import matplotlib.pyplot as plt
+from itertools import cycle
+import time
 
 
 def main():
@@ -50,11 +50,11 @@ def main():
     loss_func = torch.nn.CrossEntropyLoss()
     # Initialize arrays for losses
     losses_training = []
-    # Initialize minimum_loss to infinity (arbitrary high number)
-    minimum_loss = np.inf
-    # Initialize parameters for early stop
-    not_improved = 0
-    epoch_stop = 5
+
+    # Measure performance for 100 epochs
+    tic = time.perf_counter()
+    num_correct = 0
+    num_samples = 0
 
     # Set training loop to max epoch
     for epoch in range(configs['max_epochs']):
@@ -63,8 +63,6 @@ def main():
         print(' Running model in training set')
 
         for x, y in loader_training:
-            num_correct = 0
-            num_samples = 0
             # Reset gradients from the previous round
             optimizer.zero_grad()
             x = x.squeeze(0)
@@ -79,18 +77,23 @@ def main():
             loss_training.backward()
             # Optimize network weights
             optimizer.step()
-
             _, predictions = y_hat.max(1)
             num_correct += (predictions == y).sum()
             num_samples += predictions.size(0)
 
-        print(f'Got {num_correct} / {num_samples} with accuracy {float(num_correct) / float(num_samples) * 100:.2f}')
-        cnn.eval()
+    cnn.eval()
+    toc = time.perf_counter()
 
-        print('-----------------------------')
-        print('\n', 'EPOCH ', epoch, '| LOSS MEAN ', Tensor(losses_training).mean().item())
+    print('\n', 'RESULTS')
+    print('-----------------------------')
+    print(f" Model training time {toc - tic:0.4f} seconds")
+    print(' Training loss: ', Tensor(losses_training).mean().item())
+    print(f' Classified in total of {num_correct}/{num_samples} samples')
+    print(f' With accuracy of {float(num_correct) / float(num_samples) * 100:.2f}')
+    print('-----------------------------')
+    print('\n', 'EPOCH ', epoch, '| LOSS MEAN ', Tensor(losses_training).mean().item())
 
-        torch.save(cnn, 'cnn_model')
+    torch.save(cnn, 'cnn_model')
 
 
 if __name__ == '__main__':
